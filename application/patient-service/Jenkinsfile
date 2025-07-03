@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = "06030101/patient-service"
+        KUBE_CONFIG = credentials('kubeconfig')
+    }
+
+    stages {
+        stage('Clone Repo') {
+            steps {
+                git 'https://github.com/Moien6702/Medicure-DevOps-Project.git'
+            }
+        }
+
+        stage('Maven Build') {
+            steps {
+                dir('patient-service') {
+                    sh 'mvn clean package'
+                }
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                dir('patient-service') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'DOCKER_CREDENTIALS',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )]) {
+                        sh '''
+                        docker build -t $DOCKER_IMAGE .
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push $DOCKER_IMAGE
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Kubernetes Deploy') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh 'kubectl apply -f kubernetes/patient-service/'
+                }
+            }
+        }
+    }
+}
+

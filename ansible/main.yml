@@ -1,0 +1,18 @@
+- name: Install Jenkins on Jenkins Master
+  hosts: jenkins
+  become: yes
+  tasks:
+    - include_tasks: install_jenkins.yml
+
+- name: Install Tools on Jenkins Slave
+  hosts: jenkins_slave
+  become: yes
+  tasks:
+    - include_tasks: install_tools_slave.yml
+
+- name: Install Docker and Kubernetes on K8s Nodes
+  hosts: k8s_master:k8s_workers
+  become: yes
+  tasks:
+    - include_tasks: install_kubernetes.yml
+

@@ -1,0 +1,80 @@
+---
+- name: Install build tools on Jenkins slave
+  hosts: jenkins_slave
+  become: true
+
+  tasks:
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    # ---------------- Docker Installation ----------------
+    - name: Add Docker GPG key
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.gpg
+        mode: '0644'
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu noble stable"
+        filename: docker
+        state: present
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        update_cache: yes
+        state: present
+
+    - name: Add current user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+      when: ansible_user != 'root'
+
+    # ---------------- Kubernetes (Optional) ----------------
+    - name: Remove broken Kubernetes repo if exists
+      file:
+        path: /etc/apt/sources.list.d/kubernetes.list
+        state: absent
+
+    - name: Add Kubernetes GPG key
+      get_url:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+        mode: '0644'
+
+    - name: Add Kubernetes APT repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+        filename: kubernetes
+        state: present
+
+    - name: "Install Kubernetes tools (optional: if slave builds containers)"
+      apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        update_cache: yes
+        state: present
+
+    # ---------------- Build Tools ----------------
+    - name: Install build essentials and dev tools
+      apt:
+        name:
+          - git
+          - maven
+          - openjdk-17-jdk
+          - curl
+          - wget
+        update_cache: yes
+        state: present
+
