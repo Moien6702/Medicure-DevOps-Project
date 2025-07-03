@@ -1,0 +1,5 @@
+com/medicure/patient/model/Patient.class
+com/medicure/patient/controller/PatientController.class
+com/medicure/patient/service/PatientService.class
+com/medicure/patient/PatientServiceApplication.class
+com/medicure/patient/repository/PatientRepository.class

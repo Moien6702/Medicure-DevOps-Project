@@ -1,0 +1,22 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Docker Login & Build') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'DOCKER_CREDENTIALS',
+                    usernameVariable: 'DOCKER_USERNAME',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
+                    sh '''
+                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    docker build -t $DOCKER_USERNAME/patient-service .
+                    docker push $DOCKER_USERNAME/patient-service
+                    '''
+                }
+            }
+        }
+    }
+}
+
